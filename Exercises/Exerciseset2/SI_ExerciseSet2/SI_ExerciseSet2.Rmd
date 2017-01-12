@@ -316,7 +316,10 @@ How does this compare with **existing CTA products** such as [this one from Soci
 
 <br>
 
-1. 
+1. The code above does the following:   
+* iterates through all the moving averages in MAfreq (`r paste(MAfreq, collapse=", ")`)
+* for each, if there are a sufficient number of days of data preceding
+
 
 2. 
 
