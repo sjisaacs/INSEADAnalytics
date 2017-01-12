@@ -23,11 +23,11 @@ This is a **template process for market segmentation based on survey data**, usi
 
 The process is split in 3 parts, corresponding to Sessions 3-4, 5-6, and an optional last part: 
 
-1. *Part 1*: We use some of the survery questions (e.g. in this case the first 29 "attitude" questions) to find **key customer descriptors** ("factors") using *dimensionality reduction* techniques described in the [Dimensionality Reduction](http://inseaddataanalytics.github.io/INSEADAnalytics/CourseSessions/Sessions23/FactorAnalysisReading.html) reading of Sessions 3-4.
+1. *Part 1*: We use some of the survey questions (e.g. in this case the first 29 "attitude" questions) to find **key customer descriptors** ("factors") using *dimensionality reduction* techniques described in the [Dimensionality Reduction](http://inseaddataanalytics.github.io/INSEADAnalytics/CourseSessions/Sessions23/FactorAnalysisReading.html) reading of Sessions 3-4.
 
 2. *Part 2*: We use the selected customer descriptors to **segment the market** using *cluster analysis* techniques described in the [Cluster Analysis ](http://inseaddataanalytics.github.io/INSEADAnalytics/CourseSessions/Sessions45/ClusterAnalysisReading.html) reading of Sessions 5-6.
 
-3. *Part 3*: For the market segments we create, we will use *classification analysis* to classify people based on whether or not they have purchased a product and find what are the **key purchase drivers per segment**. For ths part we will use [classification analysis ](http://inseaddataanalytics.github.io/INSEADAnalytics/Sessions67/ClassificationAnalysisReading.html) techniques.
+3. *Part 3*: For the market segments we create, we will use *classification analysis* to classify people based on whether or not they have purchased a product and find what are the **key purchase drivers per segment**. For this part we will use [classification analysis ](http://inseaddataanalytics.github.io/INSEADAnalytics/Sessions67/ClassificationAnalysisReading.html) techniques.
 
 Finally, we will use the results of this analysis to make business decisions e.g. about brand positioning, product development, etc depending on our market segments and key purchase drivers we find at the end of this process.
 
@@ -38,9 +38,9 @@ Before starting, make sure you have pulled the [course files](https://github.com
 ```{r setuplibraries, echo=FALSE, warning=FALSE}
 # SET UP
 # type in the Console below help(getwd) and help(setwd) for more information, to make sure you are in the right directory
-local_directory <- "."
-suppressWarnings(source(paste(local_directory,"../../AnalyticsLibraries/library.R", sep="/")))
-suppressWarnings(source(paste(local_directory,"../../AnalyticsLibraries/heatmapOutput.R", sep = "/")))
+local_directory <- "/Users/Steve/Documents/INSEAD/P3/BDAB/INSEADAnalytics/"
+suppressWarnings(source(paste(local_directory,"AnalyticsLibraries/library.R", sep="/")))
+suppressWarnings(source(paste(local_directory,"AnalyticsLibraries/heatmapOutput.R", sep = "/")))
 
 # Package options
 suppressWarnings(ggthemr('fresh'))  # ggplot theme
@@ -75,7 +75,7 @@ First we load the data to use (see the raw .rmd file to change the data file as 
 
 datafile_name="Boats" #  do not add .csv at the end, make sure the data are numeric, check your file.
 
-ProjectData <- read.csv(paste0("../Sessions23/data/", datafile_name, ".csv")) # this contains only the matrix ProjectData
+ProjectData <- read.csv(paste0("data/", datafile_name, ".csv")) # this contains only the matrix ProjectData
 ProjectData=data.matrix(ProjectData) 
 
 if (datafile_name == "Boats")
@@ -116,7 +116,7 @@ factor_attributes_used= c(2:30)
 
 # Please ENTER the selection criterions for the factors to use. 
 # Choices: "eigenvalue", "variance", "manual"
-factor_selectionciterion = "manual"
+factor_selectionciterion = "eigenvalue"
 
 # Please ENTER the desired minumum variance explained 
 # (ONLY USED in case "variance" is the factor selection criterion used). 
@@ -166,10 +166,15 @@ This is the correlation matrix of the customer responses to the `r ncol(ProjectD
 
 ```{r}
 thecor = round(cor(ProjectDataFactor),2)
-colnames(thecor)<-colnames(ProjectDataFactor)
-rownames(thecor)<-colnames(ProjectDataFactor)
 
-dformat(round(thecor,2))
+minval <- 0.5
+thecor_thres <- thecor
+thecor_thres[abs(thecor_thres) < minval]<-"-"
+
+colnames(thecor_thres)<-colnames(ProjectDataFactor)
+rownames(thecor_thres)<-colnames(ProjectDataFactor)
+
+dformat(thecor_thres)
 ```
 <br>
 
@@ -179,10 +184,20 @@ dformat(round(thecor,2))
 2. What do these correlations imply?
 
 **Answers:**
-<br>
-<br>
-<br>
-<br>
+1. Pairwise correlations > 0.5:
+* 3 & 9
+* 6 & 7
+* 9 & 26
+* 13 & 14
+* 14 & 15
+* 16 & 17
+* 16 & 20
+* 16 & 28
+* 20 & 27
+* 20 & 28
+* 27 & 28
+
+2. There is some underlying factor (or independent variable) which often drives similar responses to pairs of questions listed above.
 
 <hr>
 
@@ -239,10 +254,13 @@ c3(melt(df, id="components"), x="components", y="value", group="variable") %>% c
 3. What characteristics of these results would we prefer to see? Why?
 
 **Your Answers here:**
-<br>
-<br>
-<br>
-<br>
+1. The table displays 29 new factors, each generated as a linear combination (approximately) of the original 29 attributes. The factors are determined on the basis of retaining as much of the original information in as few factors as possible. The plot shows the same information graphically, plotting each new factor's eigenvalue.
+
+2. The new factors are ordered from highest eigenvalue to lowest; hence the scree plot will always be decreasing from left to right (or flat). This specific shape is due to the fact that some factors describe more variation than the original attributes, and therefore later factors contain less information than the original attributes.
+
+3. Few components above the ab-line, i.e. few eigenvalues > 1. This allows us to simplify our collection of attributes greatly while retaining most of the information. In this case, the scree plot will have a very steep gradient / sharp "elbow".
+
+<br> 
 
 ## Step 5: Interpret the factors
 
@@ -299,11 +317,22 @@ dformat(Rotated_Factors_thres)
 5. (Extra/Optional) Can you make this report "dynamic" using shiny and then post it on [shinyapps.io](http://www.shinyapps.io)? (see for example exercise set 1 and interactive exercise set 2)
 
 **Your Answers here:**
-<br>
-<br>
-<br>
-<br>
+1. 
+* Factor 1: "Image & Status"
+* Factor 2: "Escapism & Reward"
+* Factor 3: "Boating Expertise"
+* Factor 4: "Brand Consciousness"
+* Factor 5: "Functionality"
 
+2. 5; overlap is minimal and eigenvalues are all above 1. Secondly, the question groupings make sense, as described above. Thirdly, these factors are actionable and allows us to make business decisions with respect to marketing decisions, customer behaviour, etc. 
+
+The additional information explained by adding extra factors is small.
+
+3. See 1
+
+4. Data science is actually a science AND an art.
+
+<br>
 
 ## Step 6:  Save factor scores 
 
