@@ -177,6 +177,7 @@ We can also transpose the matrix of returns to create a new "horizontal" matrix.
 
 number of rows: `r nrow(transposedData)`   
 number of columns: `r ncol(transposedData)`   
+both: `r dim(transposedData)`
 
 2. Based on the help for the R function *apply* (`help(apply)`), can you create again the portfolio of S&P and Apple and plot the returns in a new figure below?
 

@@ -317,11 +317,67 @@ How does this compare with **existing CTA products** such as [this one from Soci
 <br>
 
 1. The code above does the following:   
-* iterates through all the moving averages in MAfreq (`r paste(MAfreq, collapse=", ")`)
-* for each, if there are a sufficient number of days of data preceding
+* iterates through all the moving averages in MAfreq (`r paste(MAfreq, collapse=", ")`) calculating the moving average of the past n days of price data for each window and each future, storing these values in matrix signal_used
+* the code then normalises each row of matrix signal_used so that the total of each row is equal to 1 (if not 0)
+* we then create the trade signal by shifting our MA 'vote' signal by two days, applying it to the futures data and summing across all futures signals for each day (i.e. sum across all rows)
 
 
-2. 
+2. Below is a similar trading strategy using shorter MA signals:
+
+```{r echo=TRUE, eval=TRUE, comment=NA, warning=FALSE,error=FALSE, message=FALSE, prompt=FALSE, tidy=TRUE}
+signal_used_new <- 0*futures_data
+MAfreq_new <- seq(3,10,by=1)
+for (iter in 1:length(MAfreq_new))
+  signal_used_new = signal_used_new + sign(apply(futures_data, 2, function(r) ma(r,MAfreq_new[iter])))
+signal_used_new = t(apply(signal_used_new,1,function(r) {
+  res = r  
+  if ( sum(abs(r)) !=0 )
+    res = r/sum(abs(r))
+  res
+}))
+colnames(signal_used_new) <- colnames(futures_data)
+strategy_by_future_new <- scrub(shift(signal_used_new,1)*futures_data) #signal leads by only 1 day rather than 2
+trading_strategy_new = apply(strategy_by_future_new,1,sum)
+names(trading_strategy_new) <- rownames(futures_data)
+
+#Seeing how this new strategy performs
+pnl_plot(trading_strategy_new)
+```
+
+The returns of this strategy are considerably worse than the example given in the exercise (returns of 1.8 vs 6.2, lower Sharpe, larger drawdowns).
+
+Below is a third MA strategy which attempts to get better returns:
+
+```{r echo=TRUE, eval=TRUE, comment=NA, warning=FALSE,error=FALSE, message=FALSE, prompt=FALSE, tidy=TRUE}
+futures_data_ag <- futures_data[,1:13]
+futures_data_energy <- futures_data[,14:20]
+futures_data_metal <- futures_data[,21:29]
+futures_data_fi <- futures_data[,30:43]
+futures_data_index <- futures_data[,44:55]
+futures_data_fx <- futures_data[,56:64]
+
+futures_data_comb <- cbind(futures_data_energy, futures_data_metal, futures_data_ag)
+
+signal_used_3 <- 0*futures_data_comb
+MAfreq_3 <- seq(15,150,by=30)
+for (iter in 1:length(MAfreq_3))
+  signal_used_3 = signal_used_3 + sign(apply(futures_data_comb, 2, function(r) ma(r,MAfreq_3[iter])))
+signal_used_3 = t(apply(signal_used_3,1,function(r) {
+  res = r  
+  if ( sum(abs(r)) !=0 )
+    res = r/sum(abs(r))
+  res
+}))
+colnames(signal_used_3) <- colnames(futures_data_comb)
+strategy_by_future_3 <- scrub(shift(signal_used_3,1)*futures_data_comb)
+trading_strategy_3 = apply(strategy_by_future_3,1,sum)
+names(trading_strategy_3) <- rownames(futures_data_comb)
+
+#Seeing how this new strategy performs
+pnl_plot(trading_strategy_3)
+```
+
+This strategy uses only ag, energy and metal futures to generate its signal, has a similar (slightly shorter) set of MA signals, and lags the signal by only 1 day.
 
 <hr>
 
